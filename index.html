@@ -4,6 +4,144 @@
     <meta charset="utf-8" />
     <title>Toy Tale</title>
     <link rel="stylesheet" href="index.css" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      // Get a reference to the toy-collection div
+      const toyCollection = $('#toy-collection');
+      const toyForm = $('#toy-form');
+
+      // Make a GET request to fetch the toy objects
+      function fetchToys() {
+        $.ajax({
+          url: ' http://localhost:3000/toys',
+          type: 'GET',
+          success: function(response) {
+            // Iterate over the toy objects and create the card elements
+            response.forEach(function(toy) {
+              createCard(toy);
+            });
+          }
+        });
+      }
+
+      // Create a card element for the toy object
+      function createCard(toy) {
+        // Create the card div
+        const card = $('<div>').addClass('card');
+
+        // Create the h2 element for the toy's name
+        const name = $('<h2>').text(toy.name);
+
+        // Create the img element for the toy's image
+        const image = $('<img>').attr('src', toy.image).addClass('toy-avatar');
+
+        // Create the p element for the toy's likes
+        const likes = $('<p>').text('Likes: ' + toy.likes);
+
+        // Create the button element for liking the toy
+        const likeButton = $('<button>').addClass('like-btn').attr('id', toy.id).text('Like');
+
+// Add click event listener to the like button
+likeButton.on('click', function() {
+  const toyId = toy.id;
+  const newLikes = toy.likes + 1;
+
+  // Send a PATCH request to update the toy's likes
+  fetch(`http://localhost:3000/toys/${toyId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      likes: newLikes
+    })
+  })
+  .then(function(response) {
+    if (response.ok) {
+      return response.json();
+    }
+    throw new Error('Error updating toy likes.');
+  })
+  .then(function(updatedToy) {
+    // Update the toy's likes in the DOM
+    likes.text('Likes: ' + updatedToy.likes);
+  })
+  .catch(function(error) {
+    console.log(error);
+  });
+});
+        // Append the elements to the card div
+        card.append(name, image, likes, likeButton);
+
+        // Append the card to the toy-collection div
+        toyCollection.append(card);
+      }
+
+      // Handle the toy form submission
+      toyForm.on('submit', function(event) {
+        event.preventDefault();
+
+        const nameInput = $('#toy-name').val();
+        const imageInput = $('#toy-image').val();
+
+        // Create a new toy object
+        const newToy = {
+          name: nameInput,
+          image: imageInput,
+          likes: 0
+        };
+
+        // Send a POST request to add the new toy
+        fetch('http://localhost:3000/toys', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(newToy)
+        })
+        .then(function(response) {
+          if (response.ok) {
+            return response.json();
+          }
+          throw new Error('Error adding the toy.');
+        })
+        .then(function(toy) {
+          // Add the new toy to the DOM
+          createCard(toy);
+        })
+        .catch(function(error) {
+          console.log(error);
+        });
+      });
+
+      // Fetch toys on page load
+      fetchToys();
+    });
+  </script>
+  <style>
+    /* Add any necessary styles for the card and toy-avatar class here */
+    .card {
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .toy-avatar {
+      width: 100px;
+      height: 100px;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+  <div id="toy-collection"></div>
+  <form id="toy-form">
+    <input type="text" id="toy-name" placeholder="Toy Name">
+    <input type="text" id="toy-image" placeholder="Image URL">
+    <button type="submit">Add Toy</button>
+  </form>
+
   </head>
   <body>
     <div id="toy-header">
